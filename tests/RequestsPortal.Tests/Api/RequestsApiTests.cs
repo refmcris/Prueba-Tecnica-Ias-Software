@@ -298,12 +298,21 @@ public sealed class RequestsApiTests
         body["status"] = "Completed";
         body["createdAt"] = "2000-01-01T00:00:00Z";
         body["updatedAt"] = "2000-01-01T00:00:00Z";
+        body["attemptCount"] = "999";
+        body["providerReceiptId"] = "client-supplied";
+        body["leaseToken"] = "client-supplied";
 
         var created = await CreateAsync(client, body);
 
         Assert.NotEqual(suppliedId, created.Id);
         Assert.Equal("Pending", created.Status);
         Assert.True(created.CreatedAt.Year > 2000);
+        Assert.Equal(0, created.AttemptCount);
+        Assert.Null(created.ProviderReceiptId);
+        using var json = System.Text.Json.JsonDocument.Parse(await client.GetStringAsync($"/api/requests/{created.Id}"));
+        Assert.False(json.RootElement.TryGetProperty("leaseToken", out _));
+        Assert.False(json.RootElement.TryGetProperty("leaseUntil", out _));
+        Assert.False(json.RootElement.TryGetProperty("confirmedFailureCount", out _));
     }
 
     [Fact]
@@ -329,7 +338,7 @@ public sealed class RequestsApiTests
         Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
         Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
         var body = await response.Content.ReadAsStringAsync();
-        Assert.DoesNotContain("internal-test-detail", body);
+        Assert.DoesNotContain("detalle-interno-de-prueba", body);
         Assert.DoesNotContain("stackTrace", body, StringComparison.OrdinalIgnoreCase);
         Assert.Equal(0, await factory.CountRequestsAsync());
     }
@@ -378,14 +387,14 @@ public sealed class RequestsApiTests
         var problem = await response.Content.ReadFromJsonAsync<ValidationProblemDetails>();
         Assert.NotNull(problem);
         Assert.Equal(400, problem.Status);
-        Assert.True(problem.Errors.ContainsKey(field), $"Missing validation error for {field}.");
+        Assert.True(problem.Errors.ContainsKey(field), $"Falta el error de validación para {field}.");
     }
 
     private sealed class ThrowingTimeProvider : TimeProvider
     {
         public override DateTimeOffset GetUtcNow()
         {
-            throw new InvalidOperationException("internal-test-detail");
+            throw new InvalidOperationException("detalle-interno-de-prueba");
         }
     }
 }

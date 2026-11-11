@@ -11,6 +11,7 @@ public sealed class ProviderOperationConfiguration : IEntityTypeConfiguration<Pr
     {
         builder.ToTable("ProviderOperations", table =>
         {
+            table.HasCheckConstraint("CK_ProviderOperations_HighestAttempt", "HighestAttempt >= 0");
             table.HasCheckConstraint("CK_ProviderOperations_InvocationCount", "InvocationCount >= 0");
             table.HasCheckConstraint(
                 "CK_ProviderOperations_Receipt",

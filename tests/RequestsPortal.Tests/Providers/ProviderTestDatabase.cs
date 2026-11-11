@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using RequestsPortal.Core.Entities;
 using RequestsPortal.Core.Options;
 using RequestsPortal.Core.Persistence;
@@ -20,13 +22,21 @@ internal sealed class ProviderTestDatabase : IAsyncDisposable
 
     public string DataDirectory => directory.FullName;
 
-    public static async Task<ProviderTestDatabase> CreateAsync()
+    public static async Task<ProviderTestDatabase> CreateAsync(string? targetMigration = null)
     {
         var database = new ProviderTestDatabase();
 
         try
         {
-            await database.Database.InitializeAsync();
+            if (targetMigration is null)
+            {
+                await database.Database.InitializeAsync();
+            }
+            else
+            {
+                await using var context = database.Database.CreateContext();
+                await context.GetService<IMigrator>().MigrateAsync(targetMigration);
+            }
             return database;
         }
         catch

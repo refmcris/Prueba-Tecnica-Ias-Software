@@ -28,7 +28,10 @@ public static class RequestMappings
             Description = request.Description,
             Status = request.Status.ToString(),
             CreatedAt = request.CreatedAt,
-            UpdatedAt = request.UpdatedAt
+            UpdatedAt = request.UpdatedAt,
+            AttemptCount = request.AttemptCount,
+            LastError = request.LastError,
+            ProviderReceiptId = request.ProviderReceiptId
         };
     }
 }

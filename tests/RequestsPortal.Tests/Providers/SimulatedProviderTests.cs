@@ -19,8 +19,8 @@ public sealed class SimulatedProviderTests
         var provider = database.CreateProvider();
         var requestId = Guid.NewGuid();
 
-        var first = await provider.ProcessAsync(requestId);
-        var repeated = await provider.ProcessAsync(requestId);
+        var first = await provider.ProcessAsync(requestId, 1);
+        var repeated = await provider.ProcessAsync(requestId, 1);
         var stored = await provider.GetReceiptAsync(requestId);
 
         Assert.Equal(first, repeated);
@@ -37,8 +37,8 @@ public sealed class SimulatedProviderTests
         await using var database = await ProviderTestDatabase.CreateAsync();
         var provider = database.CreateProvider();
 
-        var first = await provider.ProcessAsync(Guid.NewGuid());
-        var second = await provider.ProcessAsync(Guid.NewGuid());
+        var first = await provider.ProcessAsync(Guid.NewGuid(), 1);
+        var second = await provider.ProcessAsync(Guid.NewGuid(), 1);
 
         Assert.NotEqual(first.ReceiptId, second.ReceiptId);
         Assert.Equal(2, await database.CountEffectsAsync());
@@ -59,12 +59,12 @@ public sealed class SimulatedProviderTests
     {
         await using var database = await ProviderTestDatabase.CreateAsync();
         var requestId = Guid.NewGuid();
-        var first = await database.CreateProvider().ProcessAsync(requestId);
+        var first = await database.CreateProvider().ProcessAsync(requestId, 1);
 
         var reopened = new ProviderDatabase(database.DataDirectory);
         await reopened.InitializeAsync();
         var provider = new SimulatedProvider(reopened, new ProviderOptions { DelaySeconds = 0 }, TimeProvider.System);
-        var repeated = await provider.ProcessAsync(requestId);
+        var repeated = await provider.ProcessAsync(requestId, 1);
 
         Assert.Equal(first, repeated);
         Assert.Equal(first, await provider.GetReceiptAsync(requestId));
@@ -80,13 +80,13 @@ public sealed class SimulatedProviderTests
         var provider = database.CreateProvider(options);
         var requestId = Guid.NewGuid();
 
-        await Assert.ThrowsAsync<ProviderTransientException>(() => provider.ProcessAsync(requestId));
+        await Assert.ThrowsAsync<ProviderTransientException>(() => provider.ProcessAsync(requestId, 1));
         Assert.Null(await provider.GetReceiptAsync(requestId));
         Assert.Equal(0, await database.CountEffectsAsync());
         Assert.Equal(1, (await database.ReadOperationAsync(requestId))!.InvocationCount);
 
         var restarted = database.CreateProvider(options);
-        var receipt = await restarted.ProcessAsync(requestId);
+        var receipt = await restarted.ProcessAsync(requestId, 1);
 
         Assert.Equal(receipt, await restarted.GetReceiptAsync(requestId));
         Assert.Equal(1, await database.CountEffectsAsync());
@@ -106,7 +106,7 @@ public sealed class SimulatedProviderTests
 
         for (var attempt = 0; attempt < 3; attempt++)
         {
-            await Assert.ThrowsAsync<ProviderTransientException>(() => provider.ProcessAsync(requestId));
+            await Assert.ThrowsAsync<ProviderTransientException>(() => provider.ProcessAsync(requestId, 1));
         }
 
         Assert.Null(await provider.GetReceiptAsync(requestId));
@@ -125,12 +125,12 @@ public sealed class SimulatedProviderTests
         });
         var requestId = Guid.NewGuid();
 
-        await Assert.ThrowsAsync<ProviderOutcomeUnknownException>(() => provider.ProcessAsync(requestId));
+        await Assert.ThrowsAsync<ProviderOutcomeUnknownException>(() => provider.ProcessAsync(requestId, 1));
 
         var stored = await provider.GetReceiptAsync(requestId);
         Assert.NotNull(stored);
         Assert.Equal(1, await database.CountEffectsAsync());
-        Assert.Equal(stored, await database.CreateProvider().ProcessAsync(requestId));
+        Assert.Equal(stored, await database.CreateProvider().ProcessAsync(requestId, 1));
         Assert.Equal(1, (await database.ReadOperationAsync(requestId))!.InvocationCount);
     }
 
@@ -139,7 +139,7 @@ public sealed class SimulatedProviderTests
     {
         await using var database = await ProviderTestDatabase.CreateAsync();
         var requestId = Guid.NewGuid();
-        var first = await database.CreateProvider().ProcessAsync(requestId);
+        var first = await database.CreateProvider().ProcessAsync(requestId, 1);
         var clock = new FakeTimeProvider();
         var provider = database.CreateProvider(new ProviderOptions
         {
@@ -147,7 +147,7 @@ public sealed class SimulatedProviderTests
             DelaySeconds = 3
         }, clock);
 
-        var repeated = await provider.ProcessAsync(requestId).WaitAsync(TimeSpan.FromSeconds(5));
+        var repeated = await provider.ProcessAsync(requestId, 1).WaitAsync(TimeSpan.FromSeconds(5));
 
         Assert.Equal(first, repeated);
         Assert.Equal(1, await database.CountEffectsAsync());
@@ -161,7 +161,7 @@ public sealed class SimulatedProviderTests
         var initialTime = clock.GetUtcNow();
         var provider = database.CreateProvider(new ProviderOptions(), clock);
         var requestId = Guid.NewGuid();
-        var processing = provider.ProcessAsync(requestId);
+        var processing = provider.ProcessAsync(requestId, 1);
 
         Assert.False(processing.IsCompleted);
         clock.Advance(TimeSpan.FromSeconds(2));
@@ -181,11 +181,11 @@ public sealed class SimulatedProviderTests
         await using var database = await ProviderTestDatabase.CreateAsync();
         var clock = new FakeTimeProvider();
         var slow = database.CreateProvider(new ProviderOptions(), clock);
-        var processing = slow.ProcessAsync(Guid.NewGuid());
+        var processing = slow.ProcessAsync(Guid.NewGuid(), 1);
 
         try
         {
-            var other = await database.CreateProvider().ProcessAsync(Guid.NewGuid())
+            var other = await database.CreateProvider().ProcessAsync(Guid.NewGuid(), 1)
                 .WaitAsync(TimeSpan.FromSeconds(5));
             Assert.NotNull(other);
             Assert.False(processing.IsCompleted);
@@ -206,9 +206,9 @@ public sealed class SimulatedProviderTests
         var clock = new FakeTimeProvider();
         var requestId = Guid.NewGuid();
         var slow = database.CreateProvider(new ProviderOptions(), clock);
-        var processing = slow.ProcessAsync(requestId);
+        var processing = slow.ProcessAsync(requestId, 1);
 
-        var first = await database.CreateProvider().ProcessAsync(requestId);
+        var first = await database.CreateProvider().ProcessAsync(requestId, 1);
         clock.Advance(TimeSpan.FromSeconds(3));
         var repeated = await processing.WaitAsync(TimeSpan.FromSeconds(5));
 
@@ -225,7 +225,7 @@ public sealed class SimulatedProviderTests
         var provider = database.CreateProvider(new ProviderOptions(), clock);
         using var cancellation = new CancellationTokenSource();
         var requestId = Guid.NewGuid();
-        var processing = provider.ProcessAsync(requestId, cancellation.Token);
+        var processing = provider.ProcessAsync(requestId, 1, cancellation.Token);
 
         cancellation.Cancel();
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => processing);
@@ -245,7 +245,7 @@ public sealed class SimulatedProviderTests
         var requestId = Guid.NewGuid();
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(
-            () => provider.ProcessAsync(requestId, cancellation.Token));
+            () => provider.ProcessAsync(requestId, 1, cancellation.Token));
 
         Assert.Null(await database.ReadOperationAsync(requestId));
     }
@@ -260,7 +260,7 @@ public sealed class SimulatedProviderTests
         var calls = Enumerable.Range(0, 12).Select(index => Task.Run(async () =>
         {
             await start.Task;
-            return await providers[index % providers.Length].ProcessAsync(requestId);
+            return await providers[index % providers.Length].ProcessAsync(requestId, 1);
         })).ToArray();
 
         start.SetResult();
@@ -285,7 +285,7 @@ public sealed class SimulatedProviderTests
 
             try
             {
-                return await providers[index % providers.Length].ProcessAsync(requestId);
+                return await providers[index % providers.Length].ProcessAsync(requestId, 1);
             }
             catch (ProviderTransientException)
             {
@@ -308,9 +308,69 @@ public sealed class SimulatedProviderTests
         await using var database = await ProviderTestDatabase.CreateAsync();
         var provider = database.CreateProvider();
 
-        await Assert.ThrowsAsync<ArgumentException>(() => provider.ProcessAsync(Guid.Empty));
+        await Assert.ThrowsAsync<ArgumentException>(() => provider.ProcessAsync(Guid.Empty, 1));
         await Assert.ThrowsAsync<ArgumentException>(() => provider.GetReceiptAsync(Guid.Empty));
         await using var context = database.Database.CreateContext();
         Assert.Equal(0, await context.Operations.CountAsync());
+    }
+    [Fact]
+    public async Task Older_attempt_is_fenced_but_an_existing_receipt_can_always_be_replayed()
+    {
+        await using var database = await ProviderTestDatabase.CreateAsync();
+        var provider = database.CreateProvider(new ProviderOptions
+        {
+            Mode = ProviderMode.TransientThenSuccess,
+            DelaySeconds = 0
+        });
+        var requestId = Guid.NewGuid();
+
+        await Assert.ThrowsAsync<ProviderTransientException>(() => provider.ProcessAsync(requestId, 2));
+        await Assert.ThrowsAsync<ProviderTransientException>(() => provider.ProcessAsync(requestId, 1));
+        Assert.Equal(0, await database.CountEffectsAsync());
+        var operation = await database.ReadOperationAsync(requestId);
+        Assert.NotNull(operation);
+        Assert.Equal(2, operation.HighestAttempt);
+        Assert.Equal(1, operation.InvocationCount);
+
+        var receipt = await provider.ProcessAsync(requestId, 3);
+        Assert.Equal(receipt, await provider.ProcessAsync(requestId, 1));
+        Assert.Equal(1, await database.CountEffectsAsync());
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public async Task Invalid_attempt_number_is_rejected(int attempt)
+    {
+        await using var database = await ProviderTestDatabase.CreateAsync();
+        var provider = database.CreateProvider();
+        var requestId = Guid.NewGuid();
+
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => provider.ProcessAsync(requestId, attempt));
+        Assert.Null(await database.ReadOperationAsync(requestId));
+    }
+    [Fact]
+    public async Task Provider_migration_preserves_receipts_created_before_attempt_fencing()
+    {
+        await using var database = await ProviderTestDatabase.CreateAsync("20261111193217_InitialProvider");
+        await using var context = database.Database.CreateContext();
+        var requestId = Guid.NewGuid();
+        var receiptId = $"receipt-{requestId:N}";
+        var completedAt = new DateTime(2026, 11, 11, 12, 0, 0, DateTimeKind.Utc);
+
+        await context.Database.ExecuteSqlInterpolatedAsync($"""
+            INSERT INTO ProviderOperations (RequestId, InvocationCount, ReceiptId, CompletedAt)
+            VALUES ({requestId}, {1}, {receiptId}, {completedAt})
+            """);
+        await context.Database.MigrateAsync();
+        var receipt = await database.CreateProvider().ProcessAsync(requestId, 1);
+
+        Assert.Equal(receiptId, receipt.ReceiptId);
+        Assert.Equal(completedAt, receipt.CompletedAt);
+        Assert.Equal(1, await database.CountEffectsAsync());
+        var saved = await database.ReadOperationAsync(requestId);
+        Assert.NotNull(saved);
+        Assert.Equal(1, saved.InvocationCount);
+        Assert.Equal(0, saved.HighestAttempt);
     }
 }

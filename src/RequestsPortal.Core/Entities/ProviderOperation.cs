@@ -6,6 +6,8 @@ public sealed class ProviderOperation
 
     public int InvocationCount { get; set; }
 
+    public int HighestAttempt { get; set; }
+
     public string? ReceiptId { get; set; }
 
     public DateTime? CompletedAt { get; set; }

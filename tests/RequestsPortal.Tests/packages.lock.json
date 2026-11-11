@@ -323,6 +323,16 @@
           "Microsoft.Extensions.Logging.Abstractions": "10.0.15"
         }
       },
+      "Microsoft.Extensions.Hosting.WindowsServices": {
+        "type": "Transitive",
+        "resolved": "10.0.15",
+        "contentHash": "QMbDnOMh6f5OPa2St7d6iIfZhoTG1Io/hTz5g9VVSZa59Bo4j8WQ13XTpFcryeJ/qtE7SGTPZQjuKHpLWWdR/g==",
+        "dependencies": {
+          "Microsoft.Extensions.Hosting": "10.0.15",
+          "Microsoft.Extensions.Logging.EventLog": "10.0.15",
+          "System.ServiceProcess.ServiceController": "10.0.15"
+        }
+      },
       "Microsoft.Extensions.Logging": {
         "type": "Transitive",
         "resolved": "10.0.15",
@@ -479,6 +489,14 @@
         "resolved": "10.0.15",
         "contentHash": "d1ynyO/BvCyi8SI1m6/xASazxrZm20V/mTDJay4qmL947RsA5MEiMk1JWvafw6JX005VVBAHvjWQP1dRRBvYKw=="
       },
+      "System.ServiceProcess.ServiceController": {
+        "type": "Transitive",
+        "resolved": "10.0.15",
+        "contentHash": "F76lv6rSZM/tooJREAFeq9RUPEyW48ubG4co8oPN1RBG/h/Ob7dUjQfLRhaApCWqwhAeIPxzAHIPrUkE2eatzg==",
+        "dependencies": {
+          "System.Diagnostics.EventLog": "10.0.15"
+        }
+      },
       "xunit.abstractions": {
         "type": "Transitive",
         "resolved": "2.0.3",
@@ -529,6 +547,14 @@
         "type": "Project",
         "dependencies": {
           "Microsoft.EntityFrameworkCore.Sqlite": "[10.0.15, )"
+        }
+      },
+      "requestsportal.worker": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.Hosting": "[10.0.15, )",
+          "Microsoft.Extensions.Hosting.WindowsServices": "[10.0.15, )",
+          "RequestsPortal.Core": "[1.0.0, )"
         }
       }
     }

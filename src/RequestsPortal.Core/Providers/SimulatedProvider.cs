@@ -39,8 +39,10 @@ public sealed class SimulatedProvider : IProvider
 
     public async Task<ProviderReceipt> ProcessAsync(
         Guid requestId,
+        int attemptNumber,
         CancellationToken cancellationToken = default)
     {
+        ArgumentOutOfRangeException.ThrowIfLessThan(attemptNumber, 1);
         var receipt = await GetReceiptAsync(requestId, cancellationToken);
 
         if (receipt is not null)
@@ -73,6 +75,13 @@ public sealed class SimulatedProvider : IProvider
             context.Operations.Add(operation);
         }
 
+        // Un intento antiguo no puede producir un efecto después de otro más reciente.
+        if (attemptNumber < operation.HighestAttempt)
+        {
+            throw new ProviderTransientException();
+        }
+
+        operation.HighestAttempt = attemptNumber;
         operation.InvocationCount++;
         var transientFailure = options.Mode == ProviderMode.AlwaysTransient
             || (options.Mode == ProviderMode.TransientThenSuccess && operation.InvocationCount == 1);

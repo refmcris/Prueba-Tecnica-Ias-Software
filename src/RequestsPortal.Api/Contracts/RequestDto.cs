@@ -17,4 +17,10 @@ public sealed record RequestDto
     public required DateTime CreatedAt { get; init; }
 
     public required DateTime UpdatedAt { get; init; }
+
+    public required int AttemptCount { get; init; }
+
+    public string? LastError { get; init; }
+
+    public string? ProviderReceiptId { get; init; }
 }

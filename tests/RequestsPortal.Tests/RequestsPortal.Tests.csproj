@@ -15,5 +15,6 @@
     </PackageReference>
     <ProjectReference Include="..\..\src\RequestsPortal.Core\RequestsPortal.Core.csproj" />
     <ProjectReference Include="..\..\src\RequestsPortal.Api\RequestsPortal.Api.csproj" />
+    <ProjectReference Include="..\..\src\RequestsPortal.Worker\RequestsPortal.Worker.csproj" />
   </ItemGroup>
 </Project>

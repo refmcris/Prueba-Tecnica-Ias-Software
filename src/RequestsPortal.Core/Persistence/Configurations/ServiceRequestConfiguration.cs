@@ -12,6 +12,8 @@ public sealed class ServiceRequestConfiguration : IEntityTypeConfiguration<Servi
     {
         builder.ToTable("Requests", table =>
         {
+            table.HasCheckConstraint("CK_Requests_Attempts", "AttemptCount >= 0");
+            table.HasCheckConstraint("CK_Requests_ConfirmedFailures", "ConfirmedFailureCount >= 0 AND ConfirmedFailureCount <= AttemptCount");
             table.HasCheckConstraint(
                 "CK_Requests_Status",
                 "Status IN ('Pending', 'Processing', 'Completed', 'Failed')");
@@ -47,7 +49,11 @@ public sealed class ServiceRequestConfiguration : IEntityTypeConfiguration<Servi
             request.ExternalReference
         }).IsUnique();
 
-        builder.HasIndex(request => request.Status);
+        builder.HasIndex(request => new
+        {
+            request.Status,
+            request.NextAttemptAt
+        });
 
         // SQLite no conserva DateTime.Kind; al leer recuperamos UTC.
         var utcConverter = new ValueConverter<DateTime, DateTime>(
@@ -56,6 +62,14 @@ public sealed class ServiceRequestConfiguration : IEntityTypeConfiguration<Servi
 
         builder.Property(request => request.CreatedAt)
             .HasConversion(utcConverter);
+
+        builder.Property(request => request.NextAttemptAt)
+            .HasConversion(utcConverter);
+
+        builder.Property(request => request.LeaseUntil)
+            .HasConversion(new ValueConverter<DateTime?, DateTime?>(
+                value => value,
+                value => value.HasValue ? DateTime.SpecifyKind(value.Value, DateTimeKind.Utc) : null));
 
         builder.Property(request => request.UpdatedAt)
             .HasConversion(utcConverter);

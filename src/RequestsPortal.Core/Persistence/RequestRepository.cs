@@ -37,7 +37,8 @@ public sealed class RequestRepository
             Description = normalized.Description,
             Status = RequestStatus.Pending,
             CreatedAt = now,
-            UpdatedAt = now
+            UpdatedAt = now,
+            NextAttemptAt = now
         };
 
         context.Requests.Add(request);

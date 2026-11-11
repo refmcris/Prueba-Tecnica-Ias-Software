@@ -26,6 +26,9 @@ namespace RequestsPortal.Core.Migrations.Provider
                     b.Property<DateTime?>("CompletedAt")
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("HighestAttempt")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int>("InvocationCount")
                         .HasColumnType("INTEGER");
 
@@ -39,6 +42,8 @@ namespace RequestsPortal.Core.Migrations.Provider
 
                     b.ToTable("ProviderOperations", null, t =>
                         {
+                            t.HasCheckConstraint("CK_ProviderOperations_HighestAttempt", "HighestAttempt >= 0");
+
                             t.HasCheckConstraint("CK_ProviderOperations_InvocationCount", "InvocationCount >= 0");
 
                             t.HasCheckConstraint("CK_ProviderOperations_Receipt", "(ReceiptId IS NULL AND CompletedAt IS NULL) OR (ReceiptId IS NOT NULL AND CompletedAt IS NOT NULL)");

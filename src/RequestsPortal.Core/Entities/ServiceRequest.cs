@@ -19,4 +19,18 @@ public sealed class ServiceRequest
     public DateTime CreatedAt { get; set; }
 
     public DateTime UpdatedAt { get; set; }
+
+    public int AttemptCount { get; set; }
+
+    public int ConfirmedFailureCount { get; set; }
+
+    public string? LastError { get; set; }
+
+    public string? ProviderReceiptId { get; set; }
+
+    public DateTime NextAttemptAt { get; set; }
+
+    public string? LeaseToken { get; set; }
+
+    public DateTime? LeaseUntil { get; set; }
 }

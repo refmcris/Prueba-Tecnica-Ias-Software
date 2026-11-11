@@ -30,6 +30,7 @@ public sealed class RequestsPersistenceTests
         Assert.Equal(request.Description, saved.Description);
         Assert.Equal(RequestStatus.Pending, saved.Status);
         Assert.Equal(request.CreatedAt, saved.CreatedAt);
+        Assert.Equal(request.CreatedAt, saved.NextAttemptAt);
         Assert.Equal(request.UpdatedAt, saved.UpdatedAt);
         Assert.Equal(DateTimeKind.Utc, saved.CreatedAt.Kind);
         Assert.Equal(DateTimeKind.Utc, saved.UpdatedAt.Kind);
@@ -158,6 +159,7 @@ public sealed class RequestsPersistenceTests
         Assert.Equal(request.Description, saved.Description);
         Assert.Equal(request.Status, saved.Status);
         Assert.Equal(request.CreatedAt, saved.CreatedAt);
+        Assert.Equal(request.CreatedAt, saved.NextAttemptAt);
         Assert.Equal(request.UpdatedAt, saved.UpdatedAt);
         Assert.Equal(DateTimeKind.Utc, saved.CreatedAt.Kind);
         Assert.Equal(DateTimeKind.Utc, saved.UpdatedAt.Kind);
@@ -175,7 +177,8 @@ public sealed class RequestsPersistenceTests
             ServiceCode = "SERVICE-1",
             Description = "Original description",
             CreatedAt = now,
-            UpdatedAt = now
+            UpdatedAt = now,
+            NextAttemptAt = now
         };
     }
 }
