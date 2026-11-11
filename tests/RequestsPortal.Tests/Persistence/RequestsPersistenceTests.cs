@@ -29,10 +29,10 @@ public sealed class RequestsPersistenceTests
         Assert.Equal(request.ServiceCode, saved.ServiceCode);
         Assert.Equal(request.Description, saved.Description);
         Assert.Equal(RequestStatus.Pending, saved.Status);
-        Assert.Equal(request.CreatedAtUtc, saved.CreatedAtUtc);
-        Assert.Equal(request.UpdatedAtUtc, saved.UpdatedAtUtc);
-        Assert.Equal(DateTimeKind.Utc, saved.CreatedAtUtc.Kind);
-        Assert.Equal(DateTimeKind.Utc, saved.UpdatedAtUtc.Kind);
+        Assert.Equal(request.CreatedAt, saved.CreatedAt);
+        Assert.Equal(request.UpdatedAt, saved.UpdatedAt);
+        Assert.Equal(DateTimeKind.Utc, saved.CreatedAt.Kind);
+        Assert.Equal(DateTimeKind.Utc, saved.UpdatedAt.Kind);
     }
 
     [Fact]
@@ -132,6 +132,37 @@ public sealed class RequestsPersistenceTests
         Assert.Empty(await reopened.Database.GetPendingMigrationsAsync());
     }
 
+    [Fact]
+    public async Task Renaming_date_columns_preserves_existing_requests_and_timestamps()
+    {
+        await using var database = await SqliteTestDatabase.CreateAsync("20261111152521_InitialRequests");
+        await using var context = database.CreateContext();
+        var request = CreateRequest();
+        request.UpdatedAt = request.CreatedAt.AddMinutes(1);
+
+        await context.Database.ExecuteSqlInterpolatedAsync($"""
+            INSERT INTO Requests
+                (Id, ExternalReference, CustomerId, ServiceCode, Description, Status, CreatedAtUtc, UpdatedAtUtc)
+            VALUES
+                ({request.Id}, {request.ExternalReference}, {request.CustomerId}, {request.ServiceCode},
+                 {request.Description}, {request.Status.ToString()}, {request.CreatedAt}, {request.UpdatedAt})
+            """);
+
+        await context.Database.MigrateAsync();
+        var saved = await context.Requests.AsNoTracking().SingleAsync();
+
+        Assert.Equal(request.Id, saved.Id);
+        Assert.Equal(request.ExternalReference, saved.ExternalReference);
+        Assert.Equal(request.CustomerId, saved.CustomerId);
+        Assert.Equal(request.ServiceCode, saved.ServiceCode);
+        Assert.Equal(request.Description, saved.Description);
+        Assert.Equal(request.Status, saved.Status);
+        Assert.Equal(request.CreatedAt, saved.CreatedAt);
+        Assert.Equal(request.UpdatedAt, saved.UpdatedAt);
+        Assert.Equal(DateTimeKind.Utc, saved.CreatedAt.Kind);
+        Assert.Equal(DateTimeKind.Utc, saved.UpdatedAt.Kind);
+    }
+
     private static ServiceRequest CreateRequest()
     {
         var now = new DateTime(2026, 11, 11, 12, 0, 0, DateTimeKind.Utc);
@@ -143,8 +174,8 @@ public sealed class RequestsPersistenceTests
             CustomerId = "CUSTOMER-1",
             ServiceCode = "SERVICE-1",
             Description = "Original description",
-            CreatedAtUtc = now,
-            UpdatedAtUtc = now
+            CreatedAt = now,
+            UpdatedAt = now
         };
     }
 }

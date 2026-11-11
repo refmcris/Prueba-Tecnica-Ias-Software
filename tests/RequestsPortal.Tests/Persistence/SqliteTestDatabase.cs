@@ -1,5 +1,7 @@
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using RequestsPortal.Core.Persistence;
 
 namespace RequestsPortal.Tests.Persistence;
@@ -24,14 +26,21 @@ internal sealed class SqliteTestDatabase : IAsyncDisposable
             .Options;
     }
 
-    public static async Task<SqliteTestDatabase> CreateAsync()
+    public static async Task<SqliteTestDatabase> CreateAsync(string? targetMigration = null)
     {
         var database = new SqliteTestDatabase();
 
         try
         {
             await using var context = database.CreateContext();
-            await context.Database.MigrateAsync();
+            if (targetMigration is null)
+            {
+                await context.Database.MigrateAsync();
+            }
+            else
+            {
+                await context.GetService<IMigrator>().MigrateAsync(targetMigration);
+            }
             return database;
         }
         catch

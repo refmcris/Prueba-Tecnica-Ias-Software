@@ -16,7 +16,7 @@ public sealed class ServiceRequest
 
     public RequestStatus Status { get; set; } = RequestStatus.Pending;
 
-    public DateTime CreatedAtUtc { get; set; }
+    public DateTime CreatedAt { get; set; }
 
-    public DateTime UpdatedAtUtc { get; set; }
+    public DateTime UpdatedAt { get; set; }
 }

@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using RequestsPortal.Core.Entities;
+using RequestsPortal.Core.Validation;
 
 namespace RequestsPortal.Core.Persistence.Configurations;
 
@@ -20,21 +21,21 @@ public sealed class ServiceRequestConfiguration : IEntityTypeConfiguration<Servi
 
         builder.Property(request => request.ExternalReference)
             .IsRequired()
-            .HasMaxLength(128)
+            .HasMaxLength(RequestFieldLimits.ExternalReference)
             .UseCollation("BINARY");
 
         builder.Property(request => request.CustomerId)
             .IsRequired()
-            .HasMaxLength(100)
+            .HasMaxLength(RequestFieldLimits.CustomerId)
             .UseCollation("BINARY");
 
         builder.Property(request => request.ServiceCode)
             .IsRequired()
-            .HasMaxLength(80);
+            .HasMaxLength(RequestFieldLimits.ServiceCode);
 
         builder.Property(request => request.Description)
             .IsRequired()
-            .HasMaxLength(2000);
+            .HasMaxLength(RequestFieldLimits.Description);
 
         builder.Property(request => request.Status)
             .HasConversion<string>()
@@ -48,15 +49,15 @@ public sealed class ServiceRequestConfiguration : IEntityTypeConfiguration<Servi
 
         builder.HasIndex(request => request.Status);
 
-        // SQLite does not persist DateTime.Kind; restore the UTC contract on reads.
+        // SQLite no conserva DateTime.Kind; al leer recuperamos UTC.
         var utcConverter = new ValueConverter<DateTime, DateTime>(
             value => value,
             value => DateTime.SpecifyKind(value, DateTimeKind.Utc));
 
-        builder.Property(request => request.CreatedAtUtc)
+        builder.Property(request => request.CreatedAt)
             .HasConversion(utcConverter);
 
-        builder.Property(request => request.UpdatedAtUtc)
+        builder.Property(request => request.UpdatedAt)
             .HasConversion(utcConverter);
     }
 }
