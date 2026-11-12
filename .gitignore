@@ -55,3 +55,18 @@ CodeCoverage/
 *.VisualState.xml
 TestResult.xml
 nunit-*.xml
+
+# Local dependencies and generated output
+**/node_modules/
+**/dist/
+**/coverage/
+**/TestResults/
+.tools/
+.artifacts/
+data/
+.env
+.env.*
+*.db
+*.db-shm
+*.db-wal
+*.sqlite*
